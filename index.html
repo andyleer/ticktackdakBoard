@@ -9,8 +9,6 @@
       --bg: #0f1115;
       --panel: #151924;
       --accent: #4cc9f0;
-      --x: #f72585;
-      --o: #b8ff66;
       --text: #e6e9f2;
       --muted: #a5adcb;
       --win: #22c55e;
@@ -63,7 +61,7 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
       width: 100%;
-      aspect-ratio: 1 / 1; /* Keeps the board square in any iframe size */
+      aspect-ratio: 1 / 1;
       margin: 8px 0 12px;
     }
 
@@ -75,16 +73,18 @@
       place-items: center;
       cursor: pointer;
       user-select: none;
-      font-weight: 800;
-      font-size: clamp(36px, 9.5vw, 72px);
       transition: transform .08s ease, background .2s ease, border-color .2s ease;
     }
+
+    .cell img {
+      width: 60%;
+      height: 60%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+
     .cell:hover { transform: translateY(-2px); }
     .cell:active { transform: translateY(0); }
-
-    .cell.x { color: var(--x); text-shadow: 0 2px 8px rgba(247,37,133,.25); }
-    .cell.o { color: var(--o); text-shadow: 0 2px 8px rgba(184,255,102,.18); }
-
     .cell.win { outline: 3px solid var(--win); box-shadow: inset 0 0 0 2px rgba(34,197,94,.35); }
     .cell.disabled { pointer-events: none; opacity: .85; }
 
@@ -119,35 +119,30 @@
       opacity: .9;
       text-align: center;
     }
-
-    @media (max-height: 420px) {
-      .app { padding: 12px; }
-      .cell { border-radius: 12px; }
-    }
   </style>
 </head>
 <body>
   <div class="app" role="application" aria-label="Tic Tac Toe">
     <div class="header">
       <h1>🎮 Tic Tac Toe</h1>
-      <div class="status" id="status">Player <span id="turnMark">X</span>'s turn</div>
+      <div class="status" id="status">Player <span id="turnMark">Andy</span>'s turn</div>
     </div>
 
     <div class="board" id="board" aria-label="Game board" role="grid"></div>
 
     <div class="toolbar">
       <div class="scores" id="scores">
-        X: <strong id="scoreX">0</strong>
-        &nbsp;•&nbsp; O: <strong id="scoreO">0</strong>
+        Andy: <strong id="scoreX">0</strong>
+        &nbsp;•&nbsp; Guy: <strong id="scoreO">0</strong>
         &nbsp;•&nbsp; Draws: <strong id="scoreD">0</strong>
       </div>
       <div style="display:flex; gap:8px;">
-        <button class="button" id="newGameBtn" aria-label="Start new game">New Game</button>
-        <button class="button" id="resetScoresBtn" aria-label="Reset scores">Reset Scores</button>
+        <button class="button" id="newGameBtn">New Game</button>
+        <button class="button" id="resetScoresBtn">Reset Scores</button>
       </div>
     </div>
 
-    <div class="footer-note">Tap a square to play. Best viewed in a square-ish block.</div>
+    <div class="footer-note">Tap a square to play.</div>
   </div>
 
   <script>
@@ -162,25 +157,21 @@
       const scoreDEl = document.getElementById('scoreD');
 
       const WINS = [
-        [0,1,2],[3,4,5],[6,7,8], // rows
-        [0,3,6],[1,4,7],[2,5,8], // cols
-        [0,4,8],[2,4,6]          // diagonals
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
       ];
 
       let board = Array(9).fill(null);
-      let player = 'X';
+      let player = 'andy';
       let gameOver = false;
 
-      // Load scores from localStorage so they persist on your DAKboard device
-      const scores = JSON.parse(localStorage.getItem('ttt-scores') || '{"X":0,"O":0,"D":0}');
+      const scores = JSON.parse(localStorage.getItem('ttt-scores') || '{"andy":0,"guy":0,"D":0}');
       renderScores();
 
-      // Build cells
       for (let i = 0; i < 9; i++) {
         const cell = document.createElement('button');
         cell.className = 'cell';
-        cell.setAttribute('role', 'gridcell');
-        cell.setAttribute('aria-label', `Cell ${i+1}`);
         cell.dataset.idx = i;
         cell.addEventListener('click', onCellClick, { passive: true });
         boardEl.appendChild(cell);
@@ -189,17 +180,17 @@
       function onCellClick(e) {
         if (gameOver) return;
         const idx = Number(e.currentTarget.dataset.idx);
-        if (board[idx]) return; // already taken
+        if (board[idx]) return;
 
         board[idx] = player;
-        e.currentTarget.textContent = player;
-        e.currentTarget.classList.add(player.toLowerCase());
-        e.currentTarget.setAttribute('aria-label', `Cell ${idx+1}: ${player}`);
+        const img = document.createElement('img');
+        img.src = player === 'andy' ? 'andy.png' : 'guy.png';
+        e.currentTarget.appendChild(img);
 
         const win = findWin();
         if (win) {
           gameOver = true;
-          setStatus(`${player} wins!`);
+          setStatus(`${capitalize(player)} wins!`);
           win.forEach(i => boardEl.children[i].classList.add('win'));
           bumpScore(player);
           disableBoard();
@@ -214,15 +205,14 @@
           return;
         }
 
-        // switch players
-        player = player === 'X' ? 'O' : 'X';
-        turnMarkEl.textContent = player;
-        setStatus(`Player ${player}'s turn`);
+        player = player === 'andy' ? 'guy' : 'andy';
+        turnMarkEl.textContent = capitalize(player);
+        setStatus(`Player ${capitalize(player)}'s turn`);
       }
 
-      function setStatus(text) {
-        statusEl.textContent = text;
-      }
+      function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+      function setStatus(text) { statusEl.textContent = text; }
 
       function findWin() {
         for (const [a,b,c] of WINS) {
@@ -232,16 +222,16 @@
       }
 
       function bumpScore(which) {
-        if (which === 'X') scores.X++;
-        else if (which === 'O') scores.O++;
+        if (which === 'andy') scores.andy++;
+        else if (which === 'guy') scores.guy++;
         else scores.D++;
         localStorage.setItem('ttt-scores', JSON.stringify(scores));
         renderScores();
       }
 
       function renderScores() {
-        scoreXEl.textContent = scores.X;
-        scoreOEl.textContent = scores.O;
+        scoreXEl.textContent = scores.andy;
+        scoreOEl.textContent = scores.guy;
         scoreDEl.textContent = scores.D;
       }
 
@@ -255,26 +245,24 @@
 
       function newGame() {
         board = Array(9).fill(null);
-        player = 'X';
+        player = 'andy';
         gameOver = false;
-        turnMarkEl.textContent = player;
-        setStatus(`Player ${player}'s turn`);
+        turnMarkEl.textContent = capitalize(player);
+        setStatus(`Player ${capitalize(player)}'s turn`);
         for (const cell of boardEl.children) {
-          cell.textContent = '';
-          cell.classList.remove('x','o','win','disabled');
-          cell.setAttribute('aria-label', `Cell ${Number(cell.dataset.idx)+1}`);
+          cell.innerHTML = '';
+          cell.classList.remove('win','disabled');
         }
         enableBoard();
       }
 
       newGameBtn.addEventListener('click', newGame);
       resetScoresBtn.addEventListener('click', () => {
-        scores.X = scores.O = scores.D = 0;
+        scores.andy = scores.guy = scores.D = 0;
         localStorage.setItem('ttt-scores', JSON.stringify(scores));
         renderScores();
       });
 
-      // Start fresh on load
       newGame();
     })();
   </script>
