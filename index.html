@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tic Tac Toe</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #151924;
+      --accent: #4cc9f0;
+      --x: #f72585;
+      --o: #b8ff66;
+      --text: #e6e9f2;
+      --muted: #a5adcb;
+      --win: #22c55e;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 20% -10%, #182033 0%, var(--bg) 60%);
+      color: var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      display: grid;
+      place-items: center;
+    }
+
+    .app {
+      width: min(92vw, 520px);
+      padding: 18px;
+      background: linear-gradient(180deg, #131829, #0e1220 60%);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-size: clamp(18px, 2.4vw, 22px);
+      margin: 0;
+      letter-spacing: .3px;
+      font-weight: 700;
+    }
+
+    .status {
+      font-size: clamp(14px, 2vw, 16px);
+      color: var(--muted);
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      width: 100%;
+      aspect-ratio: 1 / 1; /* Keeps the board square in any iframe size */
+      margin: 8px 0 12px;
+    }
+
+    .cell {
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,.06);
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 800;
+      font-size: clamp(36px, 9.5vw, 72px);
+      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+    }
+    .cell:hover { transform: translateY(-2px); }
+    .cell:active { transform: translateY(0); }
+
+    .cell.x { color: var(--x); text-shadow: 0 2px 8px rgba(247,37,133,.25); }
+    .cell.o { color: var(--o); text-shadow: 0 2px 8px rgba(184,255,102,.18); }
+
+    .cell.win { outline: 3px solid var(--win); box-shadow: inset 0 0 0 2px rgba(34,197,94,.35); }
+    .cell.disabled { pointer-events: none; opacity: .85; }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .scores { color: var(--muted); font-size: 14px; }
+    .scores strong { color: var(--text); }
+
+    button.button {
+      background: linear-gradient(180deg, #1b2140, #141931);
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: .2px;
+      transition: transform .08s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
+    }
+    button.button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,.18); }
+    button.button:active { transform: translateY(0); }
+
+    .footer-note {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      opacity: .9;
+      text-align: center;
+    }
+
+    @media (max-height: 420px) {
+      .app { padding: 12px; }
+      .cell { border-radius: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Tic Tac Toe">
+    <div class="header">
+      <h1>🎮 Tic Tac Toe</h1>
+      <div class="status" id="status">Player <span id="turnMark">X</span>'s turn</div>
+    </div>
+
+    <div class="board" id="board" aria-label="Game board" role="grid"></div>
+
+    <div class="toolbar">
+      <div class="scores" id="scores">
+        X: <strong id="scoreX">0</strong>
+        &nbsp;•&nbsp; O: <strong id="scoreO">0</strong>
+        &nbsp;•&nbsp; Draws: <strong id="scoreD">0</strong>
+      </div>
+      <div style="display:flex; gap:8px;">
+        <button class="button" id="newGameBtn" aria-label="Start new game">New Game</button>
+        <button class="button" id="resetScoresBtn" aria-label="Reset scores">Reset Scores</button>
+      </div>
+    </div>
+
+    <div class="footer-note">Tap a square to play. Best viewed in a square-ish block.</div>
+  </div>
+
+  <script>
+    (function() {
+      const boardEl = document.getElementById('board');
+      const statusEl = document.getElementById('status');
+      const turnMarkEl = document.getElementById('turnMark');
+      const newGameBtn = document.getElementById('newGameBtn');
+      const resetScoresBtn = document.getElementById('resetScoresBtn');
+      const scoreXEl = document.getElementById('scoreX');
+      const scoreOEl = document.getElementById('scoreO');
+      const scoreDEl = document.getElementById('scoreD');
+
+      const WINS = [
+        [0,1,2],[3,4,5],[6,7,8], // rows
+        [0,3,6],[1,4,7],[2,5,8], // cols
+        [0,4,8],[2,4,6]          // diagonals
+      ];
+
+      let board = Array(9).fill(null);
+      let player = 'X';
+      let gameOver = false;
+
+      // Load scores from localStorage so they persist on your DAKboard device
+      const scores = JSON.parse(localStorage.getItem('ttt-scores') || '{"X":0,"O":0,"D":0}');
+      renderScores();
+
+      // Build cells
+      for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('button');
+        cell.className = 'cell';
+        cell.setAttribute('role', 'gridcell');
+        cell.setAttribute('aria-label', `Cell ${i+1}`);
+        cell.dataset.idx = i;
+        cell.addEventListener('click', onCellClick, { passive: true });
+        boardEl.appendChild(cell);
+      }
+
+      function onCellClick(e) {
+        if (gameOver) return;
+        const idx = Number(e.currentTarget.dataset.idx);
+        if (board[idx]) return; // already taken
+
+        board[idx] = player;
+        e.currentTarget.textContent = player;
+        e.currentTarget.classList.add(player.toLowerCase());
+        e.currentTarget.setAttribute('aria-label', `Cell ${idx+1}: ${player}`);
+
+        const win = findWin();
+        if (win) {
+          gameOver = true;
+          setStatus(`${player} wins!`);
+          win.forEach(i => boardEl.children[i].classList.add('win'));
+          bumpScore(player);
+          disableBoard();
+          return;
+        }
+
+        if (board.every(Boolean)) {
+          gameOver = true;
+          setStatus(`Draw!`);
+          bumpScore('D');
+          disableBoard();
+          return;
+        }
+
+        // switch players
+        player = player === 'X' ? 'O' : 'X';
+        turnMarkEl.textContent = player;
+        setStatus(`Player ${player}'s turn`);
+      }
+
+      function setStatus(text) {
+        statusEl.textContent = text;
+      }
+
+      function findWin() {
+        for (const [a,b,c] of WINS) {
+          if (board[a] && board[a] === board[b] && board[a] === board[c]) return [a,b,c];
+        }
+        return null;
+      }
+
+      function bumpScore(which) {
+        if (which === 'X') scores.X++;
+        else if (which === 'O') scores.O++;
+        else scores.D++;
+        localStorage.setItem('ttt-scores', JSON.stringify(scores));
+        renderScores();
+      }
+
+      function renderScores() {
+        scoreXEl.textContent = scores.X;
+        scoreOEl.textContent = scores.O;
+        scoreDEl.textContent = scores.D;
+      }
+
+      function disableBoard() {
+        [...boardEl.children].forEach(c => c.classList.add('disabled'));
+      }
+
+      function enableBoard() {
+        [...boardEl.children].forEach(c => c.classList.remove('disabled'));
+      }
+
+      function newGame() {
+        board = Array(9).fill(null);
+        player = 'X';
+        gameOver = false;
+        turnMarkEl.textContent = player;
+        setStatus(`Player ${player}'s turn`);
+        for (const cell of boardEl.children) {
+          cell.textContent = '';
+          cell.classList.remove('x','o','win','disabled');
+          cell.setAttribute('aria-label', `Cell ${Number(cell.dataset.idx)+1}`);
+        }
+        enableBoard();
+      }
+
+      newGameBtn.addEventListener('click', newGame);
+      resetScoresBtn.addEventListener('click', () => {
+        scores.X = scores.O = scores.D = 0;
+        localStorage.setItem('ttt-scores', JSON.stringify(scores));
+        renderScores();
+      });
+
+      // Start fresh on load
+      newGame();
+    })();
+  </script>
+</body>
+</html>
