@@ -8,96 +8,73 @@
     :root {
       --bg: #0f1115;
       --panel: #151924;
-      --accent: #4cc9f0;
       --text: #e6e9f2;
       --muted: #a5adcb;
       --win: #22c55e;
       --shadow: 0 10px 30px rgba(0,0,0,.35);
       --radius: 22px;
     }
-
     * { box-sizing: border-box; }
     html, body { height: 100%; }
     body {
       margin: 0;
       background: radial-gradient(1200px 800px at 20% -10%, #182033 0%, var(--bg) 60%);
       color: var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      font-family: system-ui, sans-serif;
       display: grid;
       place-items: center;
     }
-
     .app {
       width: min(92vw, 520px);
       padding: 18px;
       background: linear-gradient(180deg, #131829, #0e1220 60%);
-      border: 1px solid rgba(255,255,255,.06);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.06);
     }
-
-    .header {
+    .header, .toolbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      margin-bottom: 14px;
     }
-
-    h1 {
-      font-size: clamp(18px, 2.4vw, 22px);
-      margin: 0;
-      letter-spacing: .3px;
-      font-weight: 700;
-    }
-
-    .status {
-      font-size: clamp(14px, 2vw, 16px);
-      color: var(--muted);
-    }
-
+    h1 { font-size: 22px; margin: 0; }
+    .status { font-size: 16px; color: var(--muted); }
     .board {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 10px;
       width: 100%;
       aspect-ratio: 1 / 1;
-      margin: 8px 0 12px;
+      margin: 10px 0;
     }
-
     .cell {
       background: var(--panel);
-      border: 1px solid rgba(255,255,255,.06);
       border-radius: 18px;
+      border: 1px solid rgba(255,255,255,.08);
       display: grid;
       place-items: center;
       cursor: pointer;
-      user-select: none;
-      transition: transform .08s ease, background .2s ease, border-color .2s ease;
+      transition: transform .08s ease;
     }
-
-    .cell img {
-      width: 60%;
-      height: 60%;
-      object-fit: contain;
-      pointer-events: none;
-    }
-
-    .cell:hover { transform: translateY(-2px); }
-    .cell:active { transform: translateY(0); }
-    .cell.win { outline: 3px solid var(--win); box-shadow: inset 0 0 0 2px rgba(34,197,94,.35); }
+    .cell img { width: 70%; height: 70%; object-fit: contain; }
+    .cell.win { outline: 3px solid var(--win); }
     .cell.disabled { pointer-events: none; opacity: .85; }
-
-    .toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
+    .select-players {
+      text-align: center;
+      color: var(--text);
     }
-
-    .scores { color: var(--muted); font-size: 14px; }
-    .scores strong { color: var(--text); }
-
+    .select-players img {
+      width: 70px;
+      height: 70px;
+      margin: 8px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: transform .1s ease, border-color .1s ease;
+    }
+    .select-players img:hover { transform: scale(1.05); }
+    .select-players img.selected { border-color: var(--win); }
     button.button {
       background: linear-gradient(180deg, #1b2140, #141931);
       border: 1px solid rgba(255,255,255,.08);
@@ -106,165 +83,140 @@
       border-radius: 14px;
       cursor: pointer;
       font-weight: 600;
-      letter-spacing: .2px;
-      transition: transform .08s ease, background .2s ease, border-color .2s ease, opacity .2s ease;
     }
-    button.button:hover { transform: translateY(-1px); border-color: rgba(255,255,255,.18); }
-    button.button:active { transform: translateY(0); }
-
     .footer-note {
       margin-top: 10px;
       font-size: 12px;
       color: var(--muted);
-      opacity: .9;
       text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="app" role="application" aria-label="Tic Tac Toe">
+  <div class="app">
     <div class="header">
       <h1>🎮 Tic Tac Toe</h1>
-      <div class="status" id="status">Player <span id="turnMark">Andy</span>'s turn</div>
+      <div class="status" id="status">Select Players</div>
     </div>
 
-    <div class="board" id="board" aria-label="Game board" role="grid"></div>
+    <div id="selectScreen" class="select-players">
+      <p>Select two players:</p>
+      <div id="characterList"></div>
+      <button id="startGameBtn" class="button" disabled>Start Game</button>
+    </div>
 
-    <div class="toolbar">
-      <div class="scores" id="scores">
-        Andy: <strong id="scoreX">0</strong>
-        &nbsp;•&nbsp; Guy: <strong id="scoreO">0</strong>
-        &nbsp;•&nbsp; Draws: <strong id="scoreD">0</strong>
-      </div>
-      <div style="display:flex; gap:8px;">
-        <button class="button" id="newGameBtn">New Game</button>
-        <button class="button" id="resetScoresBtn">Reset Scores</button>
+    <div id="gameScreen" style="display:none;">
+      <div class="status">Player <span id="turnMark"></span>'s turn</div>
+      <div class="board" id="board"></div>
+      <div class="toolbar">
+        <div class="scores">P1: <strong id="score1">0</strong> • P2: <strong id="score2">0</strong> • Draws: <strong id="scoreD">0</strong></div>
+        <button id="newGameBtn" class="button">New Game</button>
       </div>
     </div>
 
-    <div class="footer-note">Tap a square to play.</div>
+    <div class="footer-note">Choose two characters and play!</div>
   </div>
 
   <script>
-    (function() {
-      const boardEl = document.getElementById('board');
-      const statusEl = document.getElementById('status');
-      const turnMarkEl = document.getElementById('turnMark');
-      const newGameBtn = document.getElementById('newGameBtn');
-      const resetScoresBtn = document.getElementById('resetScoresBtn');
-      const scoreXEl = document.getElementById('scoreX');
-      const scoreOEl = document.getElementById('scoreO');
-      const scoreDEl = document.getElementById('scoreD');
+    const characters = ['andy','guy','courey','dorothy','grandmon','pappy'];
+    let selected = [];
+    let players = {p1:null,p2:null};
+    let board = Array(9).fill(null);
+    let playerTurn = 'p1';
+    let scores = {p1:0,p2:0,D:0};
+    let gameOver = false;
 
-      const WINS = [
-        [0,1,2],[3,4,5],[6,7,8],
-        [0,3,6],[1,4,7],[2,5,8],
-        [0,4,8],[2,4,6]
-      ];
+    const selectScreen = document.getElementById('selectScreen');
+    const characterList = document.getElementById('characterList');
+    const startGameBtn = document.getElementById('startGameBtn');
+    const gameScreen = document.getElementById('gameScreen');
+    const boardEl = document.getElementById('board');
+    const turnMarkEl = document.getElementById('turnMark');
+    const score1El = document.getElementById('score1');
+    const score2El = document.getElementById('score2');
+    const scoreDEl = document.getElementById('scoreD');
+    const newGameBtn = document.getElementById('newGameBtn');
 
-      let board = Array(9).fill(null);
-      let player = 'andy';
-      let gameOver = false;
+    characters.forEach(name => {
+      const img = document.createElement('img');
+      img.src = `${name}.png`;
+      img.alt = name;
+      img.addEventListener('click', () => selectCharacter(name, img));
+      characterList.appendChild(img);
+    });
 
-      const scores = JSON.parse(localStorage.getItem('ttt-scores') || '{"andy":0,"guy":0,"D":0}');
-      renderScores();
+    function selectCharacter(name, img){
+      if(selected.includes(name)) {
+        selected = selected.filter(n=>n!==name);
+        img.classList.remove('selected');
+      } else if(selected.length < 2){
+        selected.push(name);
+        img.classList.add('selected');
+      }
+      startGameBtn.disabled = selected.length !== 2;
+    }
 
-      for (let i = 0; i < 9; i++) {
+    startGameBtn.addEventListener('click', () => {
+      players.p1 = selected[0];
+      players.p2 = selected[1];
+      selectScreen.style.display = 'none';
+      gameScreen.style.display = 'block';
+      startGame();
+    });
+
+    function startGame(){
+      board = Array(9).fill(null);
+      playerTurn = 'p1';
+      gameOver = false;
+      turnMarkEl.textContent = players[playerTurn];
+      boardEl.innerHTML = '';
+      for(let i=0;i<9;i++){
         const cell = document.createElement('button');
         cell.className = 'cell';
         cell.dataset.idx = i;
-        cell.addEventListener('click', onCellClick, { passive: true });
+        cell.addEventListener('click', onCellClick);
         boardEl.appendChild(cell);
       }
+    }
 
-      function onCellClick(e) {
-        if (gameOver) return;
-        const idx = Number(e.currentTarget.dataset.idx);
-        if (board[idx]) return;
-
-        board[idx] = player;
-        const img = document.createElement('img');
-        img.src = player === 'andy' ? 'andy.png' : 'guy.png';
-        e.currentTarget.appendChild(img);
-
-        const win = findWin();
-        if (win) {
-          gameOver = true;
-          setStatus(`${capitalize(player)} wins!`);
-          win.forEach(i => boardEl.children[i].classList.add('win'));
-          bumpScore(player);
-          disableBoard();
-          return;
-        }
-
-        if (board.every(Boolean)) {
-          gameOver = true;
-          setStatus(`Draw!`);
-          bumpScore('D');
-          disableBoard();
-          return;
-        }
-
-        player = player === 'andy' ? 'guy' : 'andy';
-        turnMarkEl.textContent = capitalize(player);
-        setStatus(`Player ${capitalize(player)}'s turn`);
+    function onCellClick(e){
+      if(gameOver) return;
+      const idx = e.currentTarget.dataset.idx;
+      if(board[idx]) return;
+      board[idx] = players[playerTurn];
+      const img = document.createElement('img');
+      img.src = `${players[playerTurn]}.png`;
+      e.currentTarget.appendChild(img);
+      const win = checkWin();
+      if(win){
+        win.forEach(i => boardEl.children[i].classList.add('win'));
+        scores[playerTurn]++;
+        gameOver = true;
+      } else if(board.every(Boolean)){
+        scores.D++;
+        gameOver = true;
+      } else {
+        playerTurn = playerTurn==='p1'?'p2':'p1';
       }
+      updateScores();
+      turnMarkEl.textContent = players[playerTurn];
+    }
 
-      function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
-
-      function setStatus(text) { statusEl.textContent = text; }
-
-      function findWin() {
-        for (const [a,b,c] of WINS) {
-          if (board[a] && board[a] === board[b] && board[a] === board[c]) return [a,b,c];
-        }
-        return null;
+    function checkWin(){
+      const WINS = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      for(const [a,b,c] of WINS){
+        if(board[a]&&board[a]===board[b]&&board[a]===board[c]) return [a,b,c];
       }
+      return null;
+    }
 
-      function bumpScore(which) {
-        if (which === 'andy') scores.andy++;
-        else if (which === 'guy') scores.guy++;
-        else scores.D++;
-        localStorage.setItem('ttt-scores', JSON.stringify(scores));
-        renderScores();
-      }
+    function updateScores(){
+      score1El.textContent = scores.p1;
+      score2El.textContent = scores.p2;
+      scoreDEl.textContent = scores.D;
+    }
 
-      function renderScores() {
-        scoreXEl.textContent = scores.andy;
-        scoreOEl.textContent = scores.guy;
-        scoreDEl.textContent = scores.D;
-      }
-
-      function disableBoard() {
-        [...boardEl.children].forEach(c => c.classList.add('disabled'));
-      }
-
-      function enableBoard() {
-        [...boardEl.children].forEach(c => c.classList.remove('disabled'));
-      }
-
-      function newGame() {
-        board = Array(9).fill(null);
-        player = 'andy';
-        gameOver = false;
-        turnMarkEl.textContent = capitalize(player);
-        setStatus(`Player ${capitalize(player)}'s turn`);
-        for (const cell of boardEl.children) {
-          cell.innerHTML = '';
-          cell.classList.remove('win','disabled');
-        }
-        enableBoard();
-      }
-
-      newGameBtn.addEventListener('click', newGame);
-      resetScoresBtn.addEventListener('click', () => {
-        scores.andy = scores.guy = scores.D = 0;
-        localStorage.setItem('ttt-scores', JSON.stringify(scores));
-        renderScores();
-      });
-
-      newGame();
-    })();
+    newGameBtn.addEventListener('click', startGame);
   </script>
 </body>
 </html>
