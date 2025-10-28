@@ -5,21 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tic Tac Toe</title>
   <style>
-    /* --- Clean, high-contrast, STATIC layout --- */
     :root {
-      /* Palette */
-      --bg: #0b0c10;           /* near-black */
-      --surface: #15171e;      /* card */
-      --surface-2: #1b1e27;    
-      --text: #f1f5f9;         /* bright text */
-      --muted: #cbd5e1;        /* secondary text */
-      --accent: #60a5fa;       /* blue */
-      --accent-2: #34d399;     /* green */
-      --danger: #fb7185;       /* red-pink */
-
-      --grid-line: #2a2f3a;    /* static grid lines */
+      --bg: #0b0c10;
+      --surface: #15171e;
+      --surface-2: #1b1e27;
+      --text: #f1f5f9;
+      --muted: #cbd5e1;
+      --accent: #60a5fa;
+      --accent-2: #34d399;
+      --grid-line: #2a2f3a;
       --win: rgba(52, 211, 153, 0.35);
-
       --radius: 18px;
       --shadow: 0 12px 30px rgba(0,0,0,.35);
     }
@@ -33,7 +28,6 @@
       color: var(--text);
       display: grid;
       place-items: center;
-      line-height: 1.35;
     }
 
     .app {
@@ -49,12 +43,8 @@
     h1 { margin: 0; font-size: 22px; letter-spacing: .2px; }
     .status { color: var(--muted); font-weight: 600; }
 
-    /* --- Selection Screen --- */
     .select-players { text-align: center; }
-    .select-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
-      margin: 12px 0 8px;
-    }
+    .select-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 8px; }
     .select-card { background: var(--surface-2); border: 1px solid #232735; border-radius: 14px; padding: 10px; }
     .select-card button { all: unset; cursor: pointer; display: grid; place-items: center; }
     .avatar { width: 72px; height: 72px; object-fit: contain; display: block; margin: 6px auto 6px; }
@@ -69,38 +59,11 @@
     .button.ghost { background: transparent; border-color: #2a2f3a; }
     .button:disabled { opacity: .5; cursor: not-allowed; }
 
-    /* --- Game Board --- */
-    .board-wrap {
-      background: var(--surface-2);
-      border: 1px solid #232735;
-      border-radius: 14px;
-      padding: 10px;
-    }
-    .board {
-      /* STATIC grid: no hover scaling, consistent cell sizes */
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-      width: 100%; aspect-ratio: 1 / 1; /* square board */
-      /* Draw static grid using background so it never "jumps" */
-      background: linear-gradient(var(--grid-line), var(--grid-line)) center/100% 1px no-repeat,
-                  linear-gradient(90deg, var(--grid-line), var(--grid-line)) center/1px 100% no-repeat;
-      /* ^ faint crosshair under cells; actual lines come from cell borders */
-    }
-    .cell {
-      position: relative;
-      border-radius: 12px;
-      background: #0f1117;
-      border: 1px solid #2a2f3a; /* consistent borders keep grid static */
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      /* Reserve image space to prevent layout shift */
-      aspect-ratio: 1 / 1;
-      overflow: hidden;
-    }
+    .board-wrap { background: var(--surface-2); border: 1px solid #232735; border-radius: 14px; padding: 10px; }
+    .board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; aspect-ratio: 1 / 1; background: var(--grid-line); }
+    .cell { position: relative; border-radius: 12px; background: #0f1117; border: 1px solid #2a2f3a; display: flex; align-items: center; justify-content: center; cursor: pointer; aspect-ratio: 1 / 1; overflow: hidden; }
     .cell img { width: 76%; height: 76%; object-fit: contain; display: block; }
-    .cell.win::after {
-      content: ""; position: absolute; inset: 0; background: var(--win);
-      pointer-events: none;
-    }
+    .cell.win::after { content: ""; position: absolute; inset: 0; background: var(--win); pointer-events: none; }
     .cell.disabled { pointer-events: none; }
 
     .scores { color: var(--muted); font-size: 14px; }
@@ -108,7 +71,6 @@
 
     .stack { display: grid; gap: 10px; }
     .row { display: flex; gap: 8px; align-items: center; justify-content: space-between; }
-    .spacer { height: 8px; }
   </style>
 </head>
 <body>
@@ -118,21 +80,22 @@
       <div class="status" id="status">Select two players</div>
     </div>
 
-    <!-- Player Select Screen -->
     <div id="selectScreen" class="select-players">
-      <p style="margin:6px 0 4px;color:var(--muted)">Tap two avatars to choose players.</p>
+      <p style="margin:6px 0 4px;color:var(--muted)">Tap two avatars to choose players or play classic X and O.</p>
       <div id="characterList" class="select-grid"></div>
       <div class="row" style="justify-content:center; margin-top:6px;">
         <button id="startGameBtn" class="button primary" disabled>Start Game</button>
       </div>
+      <div class="row" style="justify-content:center; margin-top:10px;">
+        <button id="classicModeBtn" class="button">Play Classic X / O</button>
+      </div>
     </div>
 
-    <!-- Game Screen -->
     <div id="gameScreen" style="display:none;" class="stack">
       <div class="row">
         <div class="status">Turn: <strong id="turnMark"></strong></div>
         <div class="row" style="gap:6px;">
-          <button id="backBtn" class="button ghost" title="Change players">← Players</button>
+          <button id="backBtn" class="button ghost">← Players</button>
           <button id="newGameBtn" class="button">New Round</button>
         </div>
       </div>
@@ -146,18 +109,15 @@
   </div>
 
   <script>
-    // --- Config ---
     const characters = ['andy','guy','courey','dorothy','grandmon','pappy'];
-
-    // --- State ---
     let selected = [];
     let players = {p1:null,p2:null};
     let board = Array(9).fill(null);
     let playerTurn = 'p1';
     let scores = {p1:0,p2:0,D:0};
     let gameOver = false;
+    let classicMode = false;
 
-    // --- Elements ---
     const selectScreen = document.getElementById('selectScreen');
     const characterList = document.getElementById('characterList');
     const startGameBtn = document.getElementById('startGameBtn');
@@ -172,17 +132,15 @@
     const p1NameEl = document.getElementById('p1Name');
     const p2NameEl = document.getElementById('p2Name');
     const statusEl = document.getElementById('status');
+    const classicModeBtn = document.getElementById('classicModeBtn');
 
-    // Build selection grid
     characters.forEach(name => {
       const card = document.createElement('div');
       card.className = 'select-card';
       const btn = document.createElement('button');
       const img = document.createElement('img');
       img.src = `${name}.png`; img.alt = name; img.className = 'avatar';
-      const label = document.createElement('div');
-      label.className = 'label';
-      label.textContent = cap(name);
+      const label = document.createElement('div'); label.className = 'label'; label.textContent = cap(name);
       btn.appendChild(img); btn.appendChild(label);
       btn.addEventListener('click', () => toggleSelect(name, card));
       card.appendChild(btn);
@@ -201,6 +159,7 @@
     }
 
     startGameBtn.addEventListener('click', () => {
+      classicMode = false;
       players.p1 = selected[0];
       players.p2 = selected[1];
       p1NameEl.textContent = cap(players.p1);
@@ -210,8 +169,18 @@
       startRound();
     });
 
+    classicModeBtn.addEventListener('click', () => {
+      classicMode = true;
+      players.p1 = 'X';
+      players.p2 = 'O';
+      p1NameEl.textContent = 'X';
+      p2NameEl.textContent = 'O';
+      statusEl.textContent = 'Classic Mode';
+      showGame();
+      startRound();
+    });
+
     backBtn.addEventListener('click', () => {
-      // Go back to player selection without clearing scores (optional behavior)
       hideGame();
       statusEl.textContent = 'Select two players';
     });
@@ -223,15 +192,13 @@
       board = Array(9).fill(null);
       playerTurn = 'p1';
       gameOver = false;
-      turnMarkEl.textContent = cap(players[playerTurn]);
-      // Build static 3x3
+      turnMarkEl.textContent = players[playerTurn];
       boardEl.innerHTML = '';
       for(let i=0;i<9;i++){
         const cell = document.createElement('button');
         cell.className = 'cell';
         cell.dataset.idx = i;
-        cell.setAttribute('aria-label', `Cell ${i+1}`);
-        cell.addEventListener('click', onCellClick, {passive:true});
+        cell.addEventListener('click', onCellClick);
         boardEl.appendChild(cell);
       }
     }
@@ -241,10 +208,15 @@
       const idx = Number(e.currentTarget.dataset.idx);
       if(board[idx]) return;
       board[idx] = players[playerTurn];
-      const img = document.createElement('img');
-      img.src = `${players[playerTurn]}.png`;
-      e.currentTarget.appendChild(img);
-
+      if(classicMode){
+        e.currentTarget.textContent = players[playerTurn];
+        e.currentTarget.style.fontSize = '48px';
+        e.currentTarget.style.fontWeight = 'bold';
+      } else {
+        const img = document.createElement('img');
+        img.src = `${players[playerTurn]}.png`;
+        e.currentTarget.appendChild(img);
+      }
       const win = checkWin();
       if(win){
         win.forEach(i => boardEl.children[i].classList.add('win'));
@@ -256,7 +228,7 @@
         playerTurn = playerTurn==='p1' ? 'p2' : 'p1';
       }
       updateScores();
-      turnMarkEl.textContent = cap(players[playerTurn]);
+      turnMarkEl.textContent = players[playerTurn];
     }
 
     function checkWin(){
@@ -268,9 +240,9 @@
     }
 
     function updateScores(){
-      score1El.textContent = String(scores.p1);
-      score2El.textContent = String(scores.p2);
-      scoreDEl.textContent = String(scores.D);
+      score1El.textContent = scores.p1;
+      score2El.textContent = scores.p2;
+      scoreDEl.textContent = scores.D;
     }
 
     function cap(s){ return s.charAt(0).toUpperCase() + s.slice(1); }
